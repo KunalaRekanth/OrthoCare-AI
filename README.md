@@ -1,16 +1,31 @@
-# React + Vite
+# 🦷 OrthoCare AI
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Welcome to the **OrthoCare AI** repository! This project is an AI-powered orthodontic treatment web application.
 
-Currently, two official plugins are available:
+## 📊 Automated E2E Testing & Quality Assurance
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+This repository is equipped with a robust Continuous Integration (CI) pipeline powered by GitHub Actions. On every push to the `main` branch, we automatically execute a comprehensive **500-case End-to-End Test Suite** using Selenium WebDriver.
 
-## React Compiler
+The results are dynamically generated and publicly hosted on GitHub Pages for external stakeholders, QA teams, and auditors to review.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 🔗 Live Test Reports (Publicly Accessible)
 
-## Expanding the ESLint configuration
+You can view the real-time test execution results via the external links below:
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+* 🌐 **[View Live HTML Execution Report](https://kunalarekanth.github.io/OrthoCare-AI/reports/latest/execution-report.html)**
+* 📥 **[Download Latest Excel Report (.xlsx)](https://kunalarekanth.github.io/OrthoCare-AI/reports/latest/selenium-report.xlsx)**
+
+### 🚀 Live Application
+* **[OrthoCare AI Web App](https://kunalarekanth.github.io/OrthoCare-AI/)**
+
+---
+
+### About the Test Suite
+The E2E suite covers 500 assertions across 5 core categories:
+1. **API Unit** (100 Tests)
+2. **Functional** (100 Tests)
+3. **Regression** (100 Tests)
+4. **UI/UX** (100 Tests)
+5. **Vulnerability** (100 Tests)
+
+*Reports are generated dynamically on every deployment.*
