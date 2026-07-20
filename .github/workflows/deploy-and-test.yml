@@ -73,9 +73,12 @@ jobs:
           cp "ortho app/Test_Results/HTML/execution-report.html" "ortho app/dist/reports/latest/execution-report.html"
           cp "ortho app/Test_Results/HTML/execution-report.html" "ortho app/dist/reports/history/build-${{ github.run_number }}/execution-report.html"
           
-          # Copy Excel report (Optional but great value-add!)
+          # Copy Excel report
           cp "ortho app/selenium-report.xlsx" "ortho app/dist/reports/latest/selenium-report.xlsx"
           cp "ortho app/selenium-report.xlsx" "ortho app/dist/reports/history/build-${{ github.run_number }}/selenium-report.xlsx"
+          
+          # Disable Jekyll so GitHub Pages serves all files (including .xlsx)
+          touch "ortho app/dist/.nojekyll"
           
           echo "E2E reports successfully injected."
 
