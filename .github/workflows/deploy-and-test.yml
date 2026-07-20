@@ -82,6 +82,14 @@ jobs:
           
           echo "E2E reports successfully injected."
 
+      - name: Upload Reports as Downloadable Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: E2E-Test-Reports
+          path: |
+            ortho app/Test_Results/HTML/execution-report.html
+            ortho app/selenium-report.xlsx
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
