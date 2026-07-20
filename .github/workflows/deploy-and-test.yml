@@ -40,7 +40,7 @@ jobs:
         working-directory: 'ortho app'
 
       - name: Build Project
-        run: npm run build
+        run: npx vite build --base "/OrthoCare-AI/"
         working-directory: 'ortho app'
 
       - name: Start Vite Preview Server
