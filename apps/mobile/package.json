@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test:e2e": "mocha tests/mega_web_1100.test.js --reporter ./utils/excelReporter.js --timeout 60000"
+    "test:e2e": "wdio run wdio.conf.js"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.0",
