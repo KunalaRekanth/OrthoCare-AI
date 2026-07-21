@@ -47,6 +47,12 @@ jobs:
           npm install appium @wdio/cli @wdio/local-runner @wdio/mocha-framework @wdio/spec-reporter exceljs
           npx appium driver install uiautomator2
 
+      - name: Build Web App & Copy Capacitor Assets
+        working-directory: 'ortho app/apps/mobile'
+        run: |
+          npm run build
+          npx cap copy android || true
+
       - name: Build Debug APK
         working-directory: 'ortho app/apps/mobile/android'
         run: |
