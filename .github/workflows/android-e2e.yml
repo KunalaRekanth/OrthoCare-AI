@@ -44,8 +44,9 @@ jobs:
       - name: Install Appium & WDIO Dependencies
         working-directory: 'ortho app/apps/mobile'
         run: |
+          npm install -g appium
           npm install appium @wdio/cli @wdio/local-runner @wdio/mocha-framework @wdio/spec-reporter exceljs
-          npx appium driver install uiautomator2
+          npx appium driver install uiautomator2 || appium driver install uiautomator2
 
       - name: Build Web App & Copy Capacitor Assets
         working-directory: 'ortho app/apps/mobile'
@@ -74,7 +75,7 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
-          script: bash -c "cd \"ortho app/apps/mobile\" && export APK_PATH=\"./android/app/build/outputs/apk/debug/app-debug.apk\" && chmod +x scripts/ci_run_tests.sh && ./scripts/ci_run_tests.sh"
+          script: bash -c "cd \"ortho app/apps/mobile\" && export PATH=\"\$(pwd)/node_modules/.bin:\$PATH\" && export APK_PATH=\"./android/app/build/outputs/apk/debug/app-debug.apk\" && chmod +x scripts/ci_run_tests.sh && ./scripts/ci_run_tests.sh"
 
       - name: Inject Build History Reports
         if: always()

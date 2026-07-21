@@ -6,9 +6,19 @@
 #
 set -euo pipefail
 
+# ── 0. Configure PATH for Node.js and local binaries ─────────────────────────
+export PATH="$(pwd)/node_modules/.bin:${PATH}"
+if [ -n "${GITHUB_PATH:-}" ] && [ -f "${GITHUB_PATH}" ]; then
+  while IFS= read -r line; do
+    [ -n "$line" ] && export PATH="${line}:${PATH}"
+  done < "${GITHUB_PATH}"
+fi
+
 echo "============================================="
 echo " 📱 OrthoCare AI — Mobile E2E CI Runner"
 echo "============================================="
+echo "   Node: $(node --version || echo 'Not Found')"
+echo "   NPM:  $(npm --version || echo 'Not Found')"
 
 # ── 1. Install APK onto emulator ─────────────────────────────────────────────
 APK_PATH="${APK_PATH:-./android/app/build/outputs/apk/debug/app-debug.apk}"
@@ -18,7 +28,8 @@ echo "✅ APK installed successfully."
 
 # ── 2. Start Appium server ───────────────────────────────────────────────────
 echo "🚀 Starting Appium server..."
-appium --log-level warn > /tmp/appium.log 2>&1 &
+APPIUM_BIN=$(which appium 2>/dev/null || echo "npx appium")
+${APPIUM_BIN} --log-level warn > /tmp/appium.log 2>&1 &
 APPIUM_PID=$!
 echo "   Appium PID: ${APPIUM_PID}"
 
@@ -38,18 +49,6 @@ for i in $(seq 1 $MAX_RETRIES); do
   echo "   Waiting... (${i}/${MAX_RETRIES})"
   sleep 2
 done
-
-# ── 4. Fix PATH for Node.js binaries inside emulator runner ──────────────────
-if [ -n "${GITHUB_PATH:-}" ] && [ -f "${GITHUB_PATH}" ]; then
-  echo "🔧 Injecting GITHUB_PATH entries into PATH..."
-  while IFS= read -r line; do
-    export PATH="${line}:${PATH}"
-  done < "${GITHUB_PATH}"
-fi
-
-# Verify node and npm are accessible
-echo "   Node: $(node --version)"
-echo "   NPM:  $(npm --version)"
 
 # ── 5. Run WDIO tests ───────────────────────────────────────────────────────
 echo ""
