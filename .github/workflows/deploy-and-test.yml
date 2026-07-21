@@ -141,9 +141,9 @@ jobs:
               '',
               '## 🌐 Native GitHub Pages Deployment',
               'The frontend build and E2E test report bundle have been successfully published directly to GitHub Pages:',
-              '- 📊 **[Live Latest HTML Execution Report](\${reportUrl})**',
-              '- 📁 **[Live Build-Specific Execution Report](\${historyUrl})**',
-              '- 📥 **[Download Latest Excel Report (xlsx)](\${excelUrl})**',
+              '- 📊 **[Live Latest HTML Execution Report](' + reportUrl + ')**',
+              '- 📁 **[Live Build-Specific Execution Report](' + historyUrl + ')**',
+              '- 📥 **[Download Latest Excel Report (xlsx)](' + excelUrl + ')**',
               ''
             ].join('\n');
             
