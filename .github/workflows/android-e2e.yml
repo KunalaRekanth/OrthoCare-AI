@@ -74,11 +74,7 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
-          script: |
-            cd "ortho app/apps/mobile"
-            export APK_PATH="./android/app/build/outputs/apk/debug/app-debug.apk"
-            chmod +x scripts/ci_run_tests.sh
-            bash scripts/ci_run_tests.sh
+          script: bash -c "cd \"ortho app/apps/mobile\" && export APK_PATH=\"./android/app/build/outputs/apk/debug/app-debug.apk\" && chmod +x scripts/ci_run_tests.sh && ./scripts/ci_run_tests.sh"
 
       - name: Inject Build History Reports
         if: always()
