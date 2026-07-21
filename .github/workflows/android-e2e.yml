@@ -51,7 +51,7 @@ jobs:
         working-directory: 'ortho app/apps/mobile'
         run: |
           npm run build
-          npx cap copy android || true
+          npx cap sync android
 
       - name: Build Debug APK
         working-directory: 'ortho app/apps/mobile/android'
