@@ -116,3 +116,4 @@ jobs:
           folder: 'ortho app/apps/mobile/reports'
           target-folder: reports/mobile
           clean: false
+          repository-path: 'ortho app'
