@@ -159,4 +159,4 @@ describe('OrthoCare AI — Mobile E2E Suite (1,111 Tests)', function () {
 });
 
 // Export categories for reporting
-module.exports = { categories };
+export { categories };
