@@ -62,7 +62,7 @@ export DEVICE_NAME="emulator-5554"
 export APK_PATH="${APK_PATH}"
 
 WDIO_EXIT_CODE=0
-node node_modules/@wdio/cli/bin/wdio.js run wdio.conf.js || WDIO_EXIT_CODE=$?
+npx wdio run wdio.conf.js || WDIO_EXIT_CODE=$?
 
 if [ "$WDIO_EXIT_CODE" -ne 0 ]; then
   echo "⚠️ WDIO exited with code: ${WDIO_EXIT_CODE}"
