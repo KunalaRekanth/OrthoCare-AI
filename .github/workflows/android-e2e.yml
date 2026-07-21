@@ -117,9 +117,14 @@ jobs:
           mkdir -p /tmp/mobile-reports
           cp -r apps/mobile/reports/* /tmp/mobile-reports/ 2>/dev/null || true
           
-          # Fetch gh-pages branch (create if it doesn't exist)
-          git fetch origin gh-pages:gh-pages 2>/dev/null || git checkout --orphan gh-pages
-          git checkout gh-pages 2>/dev/null || git checkout --orphan gh-pages
+          # Safely checkout or create gh-pages branch
+          git fetch origin gh-pages || true
+          if git checkout gh-pages 2>/dev/null; then
+            git reset --hard origin/gh-pages 2>/dev/null || true
+          else
+            git checkout --orphan gh-pages
+            git rm -rf . 2>/dev/null || true
+          fi
           
           # Copy reports into the correct folder
           mkdir -p reports/mobile
@@ -131,5 +136,5 @@ jobs:
           git push origin gh-pages
           
           # Switch back to main
-          git checkout main
+          git checkout main -f
 
