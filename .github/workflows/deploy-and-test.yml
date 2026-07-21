@@ -1,0 +1,172 @@
+name: Deploy and Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          path: 'ortho app'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: 'ortho app/package-lock.json'
+
+      - name: Install Dependencies
+        run: npm ci
+        working-directory: 'ortho app'
+
+      - name: Run Web Frontend Security Suite
+        working-directory: 'ortho app/apps/web'
+        env:
+          NODE_PATH: ../../node_modules
+        run: |
+          node scripts/generateWebSecuritySuite.js
+          cat web-executive-summary.md >> $GITHUB_STEP_SUMMARY
+          cat web-security-review.md >> $GITHUB_STEP_SUMMARY
+          
+          # Enforce Zero-Critical Security Policy
+          CRITICAL_COUNT=$(grep -oE '[0-9]+ Critical' web-executive-summary.md | awk '{print $1}')
+          if [ "$CRITICAL_COUNT" -gt 0 ]; then
+            echo "Security Gate Failed: Found $CRITICAL_COUNT Critical vulnerabilities!"
+            exit 1
+          fi
+          echo "Security Gate Passed: 0 Critical vulnerabilities found."
+
+      - name: Build Project
+        run: npx vite build --base "/OrthoCare-AI/"
+        working-directory: 'ortho app/apps/web'
+
+      - name: Start Vite Preview Server
+        run: |
+          npx vite preview --port 5173 --host 127.0.0.1 --base "/ortho app-project/" &
+          echo "Vite preview started in background."
+          sleep 4
+          # Curl check to verify local server is alive
+          for i in {1..10}; do
+            if curl -s -I "http://127.0.0.1:5173/ortho%20app-project/" > /dev/null; then
+              echo "Vite Preview Server is live!"
+              break
+            fi
+            echo "Waiting for Vite Preview Server to start... ($i/10)"
+            sleep 2
+          done
+          echo "TEST_BASE_URL=http://127.0.0.1:5173/ortho app-project/" >> $GITHUB_ENV
+        working-directory: 'ortho app/apps/web'
+
+      - name: Run E2E Tests
+        run: npm run test:e2e
+        working-directory: 'ortho app'
+
+      - name: Inject Reports into Build Artifacts
+        run: |
+          mkdir -p "ortho app/apps/web/dist/reports/latest"
+          mkdir -p "ortho app/apps/web/dist/reports/history/build-${{ github.run_number }}"
+          
+          # Copy E2E HTML execution report
+          cp "ortho app/Test_Results/HTML/execution-report.html" "ortho app/apps/web/dist/reports/latest/execution-report.html"
+          cp "ortho app/Test_Results/HTML/execution-report.html" "ortho app/apps/web/dist/reports/history/build-${{ github.run_number }}/execution-report.html"
+          
+          # Copy Excel report
+          cp "ortho app/selenium-report.xlsx" "ortho app/apps/web/dist/reports/latest/selenium-report.xlsx"
+          cp "ortho app/selenium-report.xlsx" "ortho app/apps/web/dist/reports/history/build-${{ github.run_number }}/selenium-report.xlsx"
+          
+          # Disable Jekyll so GitHub Pages serves all files (including .xlsx)
+          touch "ortho app/apps/web/dist/.nojekyll"
+          
+          echo "E2E reports successfully injected."
+
+      - name: Upload Reports as Downloadable Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: E2E-Test-Reports
+          path: |
+            ortho app/Test_Results/HTML/execution-report.html
+            ortho app/selenium-report.xlsx
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'ortho app/apps/web/dist'
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
+
+      - name: Generate Github Step Summary
+        if: always()
+        run: |
+          node -e "
+          const fs = require('fs');
+          const path = require('path');
+          
+          try {
+            const statsPath = 'ortho app/Test_Results/HTML/stats.json';
+            if (!fs.existsSync(statsPath)) {
+              console.error('stats.json not found!');
+              process.exit(0);
+            }
+            
+            const stats = JSON.parse(fs.readFileSync(statsPath, 'utf8'));
+            const repoOwner = '${{ github.repository_owner }}';
+            const repoName = '${{ github.event.repository.name }}';
+            const runNum = '${{ github.run_number }}';
+            
+            // Build Pages URL
+            const pagesUrl = \`https://\${repoOwner}.github.io/\${repoName}\`;
+            const reportUrl = \`\${pagesUrl}/reports/latest/execution-report.html\`;
+            const excelUrl = \`\${pagesUrl}/reports/latest/selenium-report.xlsx\`;
+            const historyUrl = \`\${pagesUrl}/reports/history/build-\${runNum}/execution-report.html\`;
+            
+            const passRate = stats.total > 0 ? ((stats.passed / stats.total) * 100).toFixed(2) : '0.00';
+            
+            const summaryMarkdown = [
+              '# 📊 E2E Web Test Execution Summary (Build #' + runNum + ')',
+              '',
+              '| Metric | Value | Status |',
+              '| :--- | :---: | :---: |',
+              '| **Total Tests** | ' + stats.total + ' | 📋 |',
+              '| **Passed** | ' + stats.passed + ' | ✅ |',
+              '| **Failed** | ' + stats.failed + ' | ' + (stats.failed > 0 ? '❌' : '➖') + ' |',
+              '| **Pass Rate** | **' + passRate + '%** | ' + (stats.failed === 0 ? '🏆' : '⚠️') + ' |',
+              '| **Duration** | ' + (stats.duration / 1000).toFixed(2) + 's | ⏱️ |',
+              '',
+              '## 🌐 Native GitHub Pages Deployment',
+              'The frontend build and E2E test report bundle have been successfully published directly to GitHub Pages:',
+              '- 📊 **[Live Latest HTML Execution Report](' + reportUrl + ')**',
+              '- 📁 **[Live Build-Specific Execution Report](' + historyUrl + ')**',
+              '- 📥 **[Download Latest Excel Report (xlsx)](' + excelUrl + ')**',
+              ''
+            ].join('\n');
+            
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summaryMarkdown);
+            console.log('GitHub Step Summary written successfully.');
+          } catch (err) {
+            console.error('Error generating Step Summary:', err);
+          }
+          "

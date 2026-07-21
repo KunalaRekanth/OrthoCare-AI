@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OrthoCare AI — Dataset Auto-Labeler</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0a0f;
+      --surface: #13131a;
+      --surface2: #1c1c28;
+      --border: rgba(255,255,255,0.08);
+      --primary: #6c63ff;
+      --primary-glow: rgba(108,99,255,0.3);
+      --secondary: #00d4aa;
+      --text: #f0f0ff;
+      --muted: #888899;
+      --success: #00d4aa;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --minor: #22c55e;
+      --moderate: #f59e0b;
+      --severe: #ef4444;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+
+    .container { max-width: 900px; margin: 0 auto; }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    .header .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--primary-glow);
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      padding: 0.3rem 1rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+    .header h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #fff 0%, var(--primary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.75rem;
+    }
+    .header p { color: var(--muted); font-size: 1rem; line-height: 1.6; }
+
+    /* Card */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+    }
+    .card-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text);
+    }
+    .card-title span { font-size: 1.2rem; }
+
+    /* API Key Input */
+    .input-group { display: flex; gap: 0.75rem; }
+    input[type="text"], input[type="password"] {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.85rem 1.25rem;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus { border-color: var(--primary); }
+    input::placeholder { color: var(--muted); }
+
+    /* Buttons */
+    .btn {
+      padding: 0.85rem 1.75rem;
+      border-radius: 10px;
+      border: none;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: #5a52e0;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px var(--primary-glow);
+    }
+    .btn-success {
+      background: var(--success);
+      color: #000;
+    }
+    .btn-success:hover:not(:disabled) { background: #00b894; transform: translateY(-1px); }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn-outline:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+
+    /* Upload Zone */
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 2.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .upload-zone:hover, .upload-zone.active {
+      border-color: var(--primary);
+      background: var(--primary-glow);
+    }
+    .upload-zone .icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+    .upload-zone p { color: var(--muted); font-size: 0.9rem; }
+    .upload-zone strong { color: var(--text); }
+    #folderInput { display: none; }
+
+    /* Stats Row */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .stat-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      text-align: center;
+    }
+    .stat-box .num {
+      font-size: 1.75rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 0.4rem;
+    }
+    .stat-box .label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .num-total { color: var(--text); }
+    .num-done { color: var(--success); }
+    .num-skip { color: var(--warning); }
+    .num-fail { color: var(--danger); }
+
+    /* Progress */
+    .progress-bar-wrap {
+      background: var(--surface2);
+      border-radius: 999px;
+      height: 10px;
+      overflow: hidden;
+      margin-bottom: 0.5rem;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      border-radius: 999px;
+      transition: width 0.3s ease;
+    }
+    .progress-text { font-size: 0.8rem; color: var(--muted); display: flex; justify-content: space-between; }
+
+    /* Current Image Preview */
+    .current-preview {
+      display: flex;
+      gap: 1.5rem;
+      align-items: flex-start;
+    }
+    .preview-img-wrap {
+      width: 180px;
+      height: 140px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+      background: var(--surface2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .preview-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .preview-img-wrap .placeholder { color: var(--muted); font-size: 2rem; }
+    .preview-info { flex: 1; }
+    .preview-filename {
+      font-size: 0.8rem;
+      color: var(--muted);
+      word-break: break-all;
+      margin-bottom: 0.5rem;
+    }
+    .preview-condition {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.4rem;
+    }
+    .severity-badge {
+      display: inline-block;
+      padding: 0.2rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+    .severity-minor { background: rgba(34,197,94,0.15); color: var(--minor); }
+    .severity-moderate { background: rgba(245,158,11,0.15); color: var(--moderate); }
+    .severity-severe { background: rgba(239,68,68,0.15); color: var(--severe); }
+    .severity-unknown { background: rgba(136,136,153,0.15); color: var(--muted); }
+
+    /* Log */
+    .log-list {
+      max-height: 280px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .log-list::-webkit-scrollbar { width: 4px; }
+    .log-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    .log-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0.75rem;
+      background: var(--surface2);
+      border-radius: 8px;
+      font-size: 0.8rem;
+      animation: slideIn 0.2s ease;
+    }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+    .log-icon { font-size: 1rem; flex-shrink: 0; }
+    .log-name { color: var(--muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .log-condition { color: var(--text); font-weight: 500; flex: 2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .log-sev { flex-shrink: 0; }
+
+    /* Control Buttons Row */
+    .controls { display: flex; gap: 1rem; flex-wrap: wrap; }
+
+    /* Steps */
+    .steps {
+      display: flex;
+      gap: 0;
+      margin-bottom: 2rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .step {
+      flex: 1;
+      padding: 1rem;
+      text-align: center;
+      border-right: 1px solid var(--border);
+      opacity: 0.4;
+      transition: opacity 0.3s;
+    }
+    .step:last-child { border-right: none; }
+    .step.active { opacity: 1; }
+    .step.done { opacity: 0.7; }
+    .step .step-num {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin: 0 auto 0.4rem;
+    }
+    .step.active .step-num { background: var(--primary); border-color: var(--primary); }
+    .step.done .step-num { background: var(--success); border-color: var(--success); color: #000; }
+    .step p { font-size: 0.75rem; color: var(--muted); }
+    .step strong { font-size: 0.85rem; display: block; margin-bottom: 0.2rem; }
+
+    /* Info box */
+    .info-box {
+      background: rgba(108,99,255,0.08);
+      border: 1px solid rgba(108,99,255,0.25);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .info-box a { color: var(--primary); text-decoration: none; }
+    .info-box a:hover { text-decoration: underline; }
+
+    /* Delay control */
+    .delay-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .delay-row label { font-size: 0.85rem; color: var(--muted); white-space: nowrap; }
+    input[type="range"] { flex: 1; accent-color: var(--primary); }
+    .delay-val { font-size: 0.85rem; color: var(--primary); font-weight: 600; white-space: nowrap; min-width: 60px; }
+
+    /* Hidden sections */
+    .section { display: none; }
+    .section.visible { display: block; }
+
+    /* Download area */
+    .download-area {
+      text-align: center;
+      padding: 2rem;
+    }
+    .download-area .big-check { font-size: 4rem; margin-bottom: 1rem; }
+    .download-area h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .download-area p { color: var(--muted); margin-bottom: 1.5rem; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="badge">⚡ Powered by Gemini Vision AI</div>
+    <h1>Dataset Auto-Labeler</h1>
+    <p>Upload your dental images → Gemini analyzes each one → Download labeled metadata.json</p>
+  </div>
+
+  <!-- Steps -->
+  <div class="steps">
+    <div class="step active" id="step1">
+      <div class="step-num">1</div>
+      <strong>API Key</strong>
+      <p>Enter Gemini key</p>
+    </div>
+    <div class="step" id="step2">
+      <div class="step-num">2</div>
+      <strong>Upload Images</strong>
+      <p>Select dataset folder</p>
+    </div>
+    <div class="step" id="step3">
+      <div class="step-num">3</div>
+      <strong>Auto-Label</strong>
+      <p>Gemini analyzes all</p>
+    </div>
+    <div class="step" id="step4">
+      <div class="step-num">4</div>
+      <strong>Download</strong>
+      <p>Get metadata.json</p>
+    </div>
+  </div>
+
+  <!-- Step 1: API Key -->
+  <div class="card" id="cardApiKey">
+    <div class="card-title"><span>🔑</span> Gemini API Key</div>
+    <div class="info-box" style="margin-bottom:1.25rem;">
+      Get your free key at <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a> → <strong>Get API Key</strong> → <strong>Create API Key</strong> (free, no credit card needed, 1500 images/day limit).
+    </div>
+    <div class="input-group">
+      <input type="password" id="apiKeyInput" placeholder="Paste your Gemini API key here..." />
+      <button class="btn btn-primary" onclick="saveApiKey()">✓ Save Key</button>
+      <button class="btn btn-outline" onclick="testApiKeyInline()">🔌 Test Key</button>
+    </div>
+    <div id="testResultInline" style="margin-top:1rem; font-size:0.85rem; display:none; padding:0.75rem; border-radius:8px; background:var(--surface2);"></div>
+  </div>
+
+  <!-- Step 2: Upload -->
+  <div class="card section" id="cardUpload">
+    <div class="card-title"><span>📁</span> Select Your Dataset Images</div>
+    <label class="upload-zone" id="uploadZone" for="folderInput">
+      <div class="icon">🦷</div>
+      <strong>Click to select images</strong>
+      <p style="margin-top:0.5rem;">Select all your dental dataset images (JPG, PNG)<br/>You can select multiple files at once</p>
+    </label>
+    <input type="file" id="folderInput" accept="image/*" multiple onchange="handleFiles(this.files)" />
+  </div>
+
+  <!-- Step 3: Processing -->
+  <div class="section" id="cardProcessing">
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="num num-total" id="statTotal">0</div>
+        <div class="label">Total</div>
+      </div>
+      <div class="stat-box">
+        <div class="num num-done" id="statDone">0</div>
+        <div class="label">Labeled</div>
+      </div>
+      <div class="stat-box">
+        <div class="num num-skip" id="statSkip">0</div>
+        <div class="label">Skipped</div>
+      </div>
+      <div class="stat-box">
+        <div class="num num-fail" id="statFail">0</div>
+        <div class="label">Failed</div>
+      </div>
+    </div>
+
+    <!-- Progress -->
+    <div class="card">
+      <div class="card-title"><span>⚡</span> Progress</div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+      </div>
+      <div class="progress-text">
+        <span id="progressLabel">0 / 0 images</span>
+        <span id="progressPct">0%</span>
+      </div>
+
+      <div class="delay-row">
+        <label>Delay between requests:</label>
+        <input type="range" min="500" max="5000" step="500" value="1500" id="delaySlider" oninput="updateDelay(this.value)" />
+        <span class="delay-val" id="delayVal">1.5s</span>
+      </div>
+    </div>
+
+    <!-- Current image -->
+    <div class="card">
+      <div class="card-title"><span>🔍</span> Currently Analyzing</div>
+      <div class="current-preview">
+        <div class="preview-img-wrap">
+          <img id="currentImg" src="" style="display:none;" />
+          <span class="placeholder" id="imgPlaceholder">🦷</span>
+        </div>
+        <div class="preview-info">
+          <div class="preview-filename" id="currentFilename">Waiting to start...</div>
+          <div class="preview-condition" id="currentCondition">—</div>
+          <div id="currentSeverity"></div>
+          <div style="margin-top:0.75rem; font-size:0.8rem; color:var(--muted);" id="currentSuggestion"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="card">
+      <div class="controls">
+        <button class="btn btn-outline" id="btnTest" onclick="testApiKey()">🔌 Test API Key</button>
+        <button class="btn btn-primary" id="btnStart" onclick="startLabeling()">▶ Start Labeling</button>
+        <button class="btn btn-outline" id="btnPause" onclick="pauseLabeling()" disabled>⏸ Pause</button>
+        <button class="btn btn-outline" id="btnResume" onclick="resumeLabeling()" style="display:none">▶ Resume</button>
+        <button class="btn btn-success" id="btnDownload" onclick="downloadJSON()" disabled>⬇ Download metadata.json</button>
+      </div>
+      <div id="testResult" style="margin-top:1rem; font-size:0.85rem; display:none;"></div>
+    </div>
+
+    <!-- Log -->
+    <div class="card">
+      <div class="card-title"><span>📋</span> Activity Log</div>
+      <div class="log-list" id="logList">
+        <div style="color:var(--muted); font-size:0.85rem; padding:0.5rem;">Waiting to start...</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Step 4: Done -->
+  <div class="section" id="cardDone">
+    <div class="card">
+      <div class="download-area">
+        <div class="big-check">✅</div>
+        <h2>All Images Labeled!</h2>
+        <p id="doneMsg">Your metadata.json is ready to download.</p>
+        <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+          <button class="btn btn-success" onclick="downloadJSON()">⬇ Download metadata.json</button>
+          <button class="btn btn-outline" onclick="location.reload()">🔄 Start Over</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ── State ──────────────────────────────────────────────────────────────────
+  let apiKey = '';
+  let files = [];
+  let results = [];
+  let currentIndex = 0;
+  let isPaused = false;
+  let isStopped = false;
+  let delay = 1500;
+
+  let statDone = 0, statSkip = 0, statFail = 0;
+
+  // ── Condition Categories ───────────────────────────────────────────────────
+  const CONDITIONS = [
+    "Ligature-related: Lost elastic ligature",
+    "Bracket-related: Complete debond",
+    "Periodontal issues: Gingival inflammation",
+    "Caries/enamel: White spot lesions",
+    "Archwire-related: Poking wire",
+    "Soft tissue injuries: Cheek/lip ulcer",
+    "TMJ discomfort",
+    "Fixed appliance: Breakage of telescopic rod",
+    "Trauma-related: Appliance injury",
+    "Removable appliance: Excessive salivation",
+    "Pain-related: Excessive force pain",
+    "Twin Block specific: Dislodged bite block",
+    "Ingestion/aspiration: Swallowed component",
+    "Normal: Braces appear intact and healthy"
+  ];
+
+  const GEMINI_PROMPT = `You are a dental orthodontic AI assistant. Analyze this dental/braces image carefully.
+
+Identify which condition BEST matches what you see. Choose from:
+${CONDITIONS.map((c, i) => `${i + 1}. ${c}`).join('\n')}
+
+Return ONLY a valid JSON object with these exact fields (no markdown, no extra text):
+{
+  "condition": "exact condition name from the list above",
+  "severity": "minor" or "moderate" or "severe",
+  "score": integer between 1 and 100,
+  "suggestions": ["suggestion 1", "suggestion 2", "suggestion 3"]
+}
+
+Scoring guide: minor = 10-30, moderate = 35-65, severe = 70-95
+For "Normal: Braces appear intact and healthy" use severity "minor" and score 5-10.
+Make suggestions specific and clinically relevant.`;
+
+  // ── Step 1: API Key ────────────────────────────────────────────────────────
+  function saveApiKey() {
+    const val = document.getElementById('apiKeyInput').value.trim();
+    if (!val || val.length < 10) {
+      alert('Please enter your Gemini API key.');
+      return;
+    }
+    apiKey = val;
+    setStep(2);
+    document.getElementById('cardApiKey').style.opacity = '0.5';
+    document.getElementById('cardUpload').classList.add('visible');
+    document.getElementById('step1').classList.remove('active');
+    document.getElementById('step1').classList.add('done');
+    document.getElementById('step1').querySelector('.step-num').textContent = '✓';
+    document.getElementById('step2').classList.add('active');
+  }
+
+  async function testApiKeyInline() {
+    const val = document.getElementById('apiKeyInput').value.trim();
+    if (!val || val.length < 10) {
+      alert('Please paste your API key first.');
+      return;
+    }
+    apiKey = val;
+
+    const box = document.getElementById('testResultInline');
+    box.style.display = 'block';
+    box.innerHTML = '<span style="color:var(--muted)">⏳ Testing your API key...</span>';
+
+    const models = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-pro'];
+    let success = false;
+
+    for (const model of models) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        const resp = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: 'Reply with one word: hello' }] }]
+          })
+        });
+        const data = await resp.json();
+        if (resp.ok && data.candidates) {
+          workingModel = model;
+          box.innerHTML = `<span style="color:var(--success)">✅ API key is valid! Model ready: <strong>${model}</strong>. Now click "Save Key" to proceed.</span>`;
+          success = true;
+          break;
+        } else {
+          const errMsg = data.error?.message || JSON.stringify(data.error);
+          box.innerHTML = `<span style="color:var(--danger)">❌ ${model}: ${errMsg}</span>`;
+        }
+      } catch (e) {
+        box.innerHTML = `<span style="color:var(--danger)">❌ Network error: ${e.message}</span>`;
+      }
+    }
+
+    if (!success) {
+      box.innerHTML += `
+        <br/><br/>
+        <span style="color:var(--warning)">⚠️ Possible fixes:</span><br/>
+        <span style="color:var(--muted)">
+          1. Make sure you copied the full API key<br/>
+          2. Go to <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--primary)">aistudio.google.com</a> and create a new key<br/>
+          3. Make sure "Generative Language API" is enabled
+        </span>`;
+    }
+  }
+
+  // ── Step 2: File Selection ─────────────────────────────────────────────────
+  function handleFiles(fileList) {
+    files = Array.from(fileList).filter(f => f.type.startsWith('image/'));
+    if (files.length === 0) {
+      alert('No image files found. Please select JPG/PNG images.');
+      return;
+    }
+
+    document.getElementById('statTotal').textContent = files.length;
+    document.getElementById('progressLabel').textContent = `0 / ${files.length} images`;
+
+    document.getElementById('cardUpload').innerHTML = `
+      <div class="card-title"><span>✅</span> ${files.length} Images Ready</div>
+      <p style="color:var(--muted); font-size:0.9rem;">Images loaded. Click "Start Labeling" below to begin.</p>
+    `;
+
+    document.getElementById('cardProcessing').classList.add('visible');
+
+    document.getElementById('step2').classList.remove('active');
+    document.getElementById('step2').classList.add('done');
+    document.getElementById('step2').querySelector('.step-num').textContent = '✓';
+    document.getElementById('step3').classList.add('active');
+  }
+
+  // ── Step 3: Labeling ───────────────────────────────────────────────────────
+  async function startLabeling() {
+    document.getElementById('btnStart').disabled = true;
+    document.getElementById('btnPause').disabled = false;
+    document.getElementById('logList').innerHTML = '';
+    results = [];
+    currentIndex = 0;
+    statDone = 0; statSkip = 0; statFail = 0;
+    isPaused = false;
+    isStopped = false;
+    await processNext();
+  }
+
+  async function processNext() {
+    if (isStopped) return;
+    if (currentIndex >= files.length) {
+      finishLabeling();
+      return;
+    }
+    if (isPaused) return;
+
+    const file = files[currentIndex];
+    updateCurrentPreview(file, 'Analyzing with Gemini...', null);
+    updateProgress();
+
+    try {
+      const base64 = await fileToBase64(file);
+      const hash = await getFileDHash(file);
+      const result = await callGemini(base64, file.type);
+
+      results.push({
+        filename: file.name,
+        hash: hash,
+        condition: result.condition,
+        severity: result.severity,
+        score: result.score,
+        suggestions: result.suggestions
+      });
+
+      statDone++;
+      updateCurrentPreview(file, result.condition, result.severity, result.suggestions[0]);
+      addLog('✅', file.name, result.condition, result.severity);
+
+    } catch (err) {
+      console.error('Error on', file.name, err);
+      const errMsg = err.message || 'Unknown error';
+      results.push({
+        filename: file.name,
+        hash: '',
+        condition: 'Unknown: Could not analyze',
+        severity: 'minor',
+        score: 0,
+        suggestions: ['Please re-analyze this image manually']
+      });
+      statFail++;
+      addLog('❌', file.name, `Failed: ${errMsg}`, null);
+      updateCurrentPreview(file, `Error: ${errMsg}`, null, null);
+    }
+
+    currentIndex++;
+    updateStats();
+    updateProgress();
+
+    // Enable download after first result
+    document.getElementById('btnDownload').disabled = false;
+
+    // Wait before next request
+    await sleep(delay);
+    await processNext();
+  }
+
+  function pauseLabeling() {
+    isPaused = true;
+    document.getElementById('btnPause').style.display = 'none';
+    document.getElementById('btnResume').style.display = 'inline-flex';
+  }
+
+  function resumeLabeling() {
+    isPaused = false;
+    document.getElementById('btnResume').style.display = 'none';
+    document.getElementById('btnPause').style.display = 'inline-flex';
+    processNext();
+  }
+
+  function finishLabeling() {
+    document.getElementById('btnPause').disabled = true;
+    document.getElementById('btnDownload').disabled = false;
+    document.getElementById('step3').classList.remove('active');
+    document.getElementById('step3').classList.add('done');
+    document.getElementById('step3').querySelector('.step-num').textContent = '✓';
+    document.getElementById('step4').classList.add('active');
+    document.getElementById('cardDone').classList.add('visible');
+    document.getElementById('doneMsg').textContent =
+      `${statDone} images labeled, ${statFail} failed. Your metadata.json is ready!`;
+  }
+
+  // ── Test API Key ──────────────────────────────────────────────────────────
+  async function testApiKey() {
+    const btn = document.getElementById('btnTest');
+    const result = document.getElementById('testResult');
+    btn.disabled = true;
+    btn.textContent = '⏳ Testing...';
+    result.style.display = 'block';
+    result.innerHTML = '<span style="color:var(--muted)">Testing API key with Gemini...</span>';
+
+    const models = ['gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-pro-vision', 'gemini-1.5-pro'];
+    let success = false;
+
+    for (const model of models) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        const resp = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: 'Say hello in one word.' }] }]
+          })
+        });
+        const data = await resp.json();
+        if (resp.ok && data.candidates) {
+          workingModel = model;
+          result.innerHTML = `<span style="color:var(--success)">✅ API key works! Using model: <strong>${model}</strong></span>`;
+          success = true;
+          break;
+        } else {
+          const errMsg = data.error?.message || 'Unknown error';
+          result.innerHTML = `<span style="color:var(--danger)">❌ Model ${model} failed: ${errMsg}</span>`;
+        }
+      } catch (e) {
+        result.innerHTML = `<span style="color:var(--danger)">❌ Network error: ${e.message}</span>`;
+      }
+    }
+
+    if (!success) {
+      result.innerHTML += '<br/><span style="color:var(--warning)">⚠️ Check: Is your API key correct? Did you enable Gemini API in Google Cloud Console?</span>';
+    }
+
+    btn.disabled = false;
+    btn.textContent = '🔌 Test API Key';
+  }
+
+  // Working model (set after test)
+  let workingModel = 'gemini-1.5-flash';
+
+  // ── Gemini API Call ────────────────────────────────────────────────────────
+  async function callGemini(base64Data, mimeType) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${workingModel}:generateContent?key=${apiKey}`;
+
+    const body = {
+      contents: [{
+        parts: [
+          { text: GEMINI_PROMPT },
+          {
+            inline_data: {
+              mime_type: mimeType || 'image/jpeg',
+              data: base64Data
+            }
+          }
+        ]
+      }],
+      generationConfig: {
+        temperature: 0.2,
+        maxOutputTokens: 512
+      }
+    };
+
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json();
+      throw new Error(err.error?.message || 'Gemini API error');
+    }
+
+    const data = await resp.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+    // Extract JSON from response
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('No JSON in Gemini response');
+
+    const parsed = JSON.parse(jsonMatch[0]);
+
+    // Validate fields
+    if (!parsed.condition || !parsed.severity || !parsed.score || !Array.isArray(parsed.suggestions)) {
+      throw new Error('Invalid response structure from Gemini');
+    }
+
+    return parsed;
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        // Remove data URL prefix (data:image/jpeg;base64,)
+        const base64 = e.target.result.split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function computeDHash(imgElement) {
+    const width = 9;
+    const height = 8;
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return '';
+    
+    ctx.drawImage(imgElement, 0, 0, width, height);
+    const imgData = ctx.getImageData(0, 0, width, height);
+    const data = imgData.data;
+
+    const gray = new Uint8Array(width * height);
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      gray[i / 4] = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+    }
+
+    const difference = [];
+    for (let row = 0; row < height; row++) {
+      for (let col = 0; col < width - 1; col++) {
+        const leftIdx = row * width + col;
+        const rightIdx = leftIdx + 1;
+        difference.push(gray[leftIdx] > gray[rightIdx]);
+      }
+    }
+
+    let hexString = '';
+    for (let i = 0; i < difference.length; i += 8) {
+      let byteVal = 0;
+      for (let bit = 0; bit < 8; bit++) {
+        if (difference[i + bit]) {
+          byteVal += (1 << bit);
+        }
+      }
+      hexString += byteVal.toString(16).padStart(2, '0');
+    }
+    return hexString;
+  }
+
+  function getFileDHash(file) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const hash = computeDHash(img);
+            resolve(hash);
+          } catch (err) {
+            resolve('');
+          }
+        };
+        img.onerror = () => resolve('');
+        img.src = e.target.result;
+      };
+      reader.onerror = () => resolve('');
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  function updateDelay(val) {
+    delay = parseInt(val);
+    document.getElementById('delayVal').textContent = (delay / 1000).toFixed(1) + 's';
+  }
+
+  function updateProgress() {
+    const total = files.length;
+    const done = currentIndex;
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressLabel').textContent = `${done} / ${total} images`;
+    document.getElementById('progressPct').textContent = pct + '%';
+  }
+
+  function updateStats() {
+    document.getElementById('statDone').textContent = statDone;
+    document.getElementById('statSkip').textContent = statSkip;
+    document.getElementById('statFail').textContent = statFail;
+  }
+
+  function updateCurrentPreview(file, condition, severity, suggestion) {
+    document.getElementById('currentFilename').textContent = file.name;
+    document.getElementById('currentCondition').textContent = condition;
+
+    const sevEl = document.getElementById('currentSeverity');
+    if (severity) {
+      sevEl.innerHTML = `<span class="severity-badge severity-${severity}">${severity}</span>`;
+    } else {
+      sevEl.innerHTML = `<span class="severity-badge severity-unknown">analyzing...</span>`;
+    }
+
+    document.getElementById('currentSuggestion').textContent = suggestion || '';
+
+    // Show image preview
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = document.getElementById('currentImg');
+      img.src = e.target.result;
+      img.style.display = 'block';
+      document.getElementById('imgPlaceholder').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function addLog(icon, filename, condition, severity) {
+    const log = document.getElementById('logList');
+    const item = document.createElement('div');
+    item.className = 'log-item';
+
+    const shortName = filename.length > 30 ? filename.substring(0, 27) + '...' : filename;
+    const shortCond = condition.length > 40 ? condition.substring(0, 37) + '...' : condition;
+
+    item.innerHTML = `
+      <span class="log-icon">${icon}</span>
+      <span class="log-name">${shortName}</span>
+      <span class="log-condition">${shortCond}</span>
+      ${severity ? `<span class="log-sev"><span class="severity-badge severity-${severity}">${severity}</span></span>` : ''}
+    `;
+    log.insertBefore(item, log.firstChild);
+
+    // Keep only 50 items in log
+    while (log.children.length > 50) log.removeChild(log.lastChild);
+  }
+
+  function setStep(n) {}
+
+  // ── Download ───────────────────────────────────────────────────────────────
+  function downloadJSON() {
+    if (results.length === 0) {
+      alert('No results yet. Please wait for labeling to complete.');
+      return;
+    }
+
+    const json = JSON.stringify(results, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'metadata.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+</script>
+</body>
+</html>

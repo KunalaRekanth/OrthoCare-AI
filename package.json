@@ -1,0 +1,16 @@
+{
+  "name": "ortho-app-root",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev:web",
+    "dev:web": "npm run dev --workspace=@ortho/web",
+    "dev:mobile": "npm run dev --workspace=@ortho/mobile",
+    "build:web": "npm run build --workspace=@ortho/web",
+    "build:mobile": "npm run build --workspace=@ortho/mobile",
+    "test:e2e": "mocha tests/mega_web_1100.test.js --reporter ./utils/excelReporter.js --timeout 60000"
+  }
+}

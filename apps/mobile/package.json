@@ -1,0 +1,41 @@
+{
+  "name": "@ortho/mobile",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "test:e2e": "mocha tests/mega_web_1100.test.js --reporter ./utils/excelReporter.js --timeout 60000"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.4.0",
+    "@capacitor/cli": "^8.4.0",
+    "@capacitor/core": "^8.4.0",
+    "@supabase/supabase-js": "^2.105.3",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^1.14.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "react-easy-crop": "^5.5.7",
+    "react-leaflet": "^5.0.0",
+    "react-router-dom": "^7.14.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "eslint": "^10.2.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "exceljs": "^4.4.0",
+    "globals": "^17.5.0",
+    "mocha": "^11.7.6",
+    "selenium-webdriver": "^4.46.0",
+    "vite": "^8.0.10",
+    "vite-plugin-pwa": "^1.3.0"
+  }
+}
