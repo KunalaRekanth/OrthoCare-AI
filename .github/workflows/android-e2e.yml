@@ -110,10 +110,29 @@ jobs:
 
       - name: Deploy Reports to GitHub Pages
         if: always()
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          branch: gh-pages
-          folder: 'ortho app/apps/mobile/reports'
-          target-folder: reports/mobile
-          clean: false
-          repository-path: 'ortho app'
+        working-directory: 'ortho app'
+        run: |
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Save reports to a temp location
+          mkdir -p /tmp/mobile-reports
+          cp -r apps/mobile/reports/* /tmp/mobile-reports/ 2>/dev/null || true
+          
+          # Fetch gh-pages branch (create if it doesn't exist)
+          git fetch origin gh-pages:gh-pages 2>/dev/null || git checkout --orphan gh-pages
+          git checkout gh-pages 2>/dev/null || git checkout --orphan gh-pages
+          
+          # Copy reports into the correct folder
+          mkdir -p reports/mobile
+          cp -r /tmp/mobile-reports/* reports/mobile/ 2>/dev/null || true
+          
+          # Commit and push
+          git add reports/mobile/ || true
+          git commit -m "Deploy mobile E2E reports (build #${{ github.run_number }})" --allow-empty
+          git push origin gh-pages
+          
+          # Switch back to main
+          git checkout main
+
