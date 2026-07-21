@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">OrthoCare-Ai</string>
+    <string name="title_activity_main">OrthoCare-Ai</string>
+    <string name="package_name">com.rekanth.orthocareai</string>
+    <string name="custom_url_scheme">com.rekanth.orthocareai</string>
+</resources>

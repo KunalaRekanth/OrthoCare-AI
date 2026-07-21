@@ -1,0 +1,110 @@
+name: Android E2E Appium Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+jobs:
+  android-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          path: 'ortho app'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: 'ortho app/package-lock.json'
+
+      - name: Setup Java (for Gradle)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 17
+
+      - name: Install Root Dependencies
+        run: npm ci
+        working-directory: 'ortho app'
+
+      - name: Install Appium & WDIO Dependencies
+        working-directory: 'ortho app/apps/mobile'
+        run: |
+          npm install appium @wdio/cli @wdio/local-runner @wdio/mocha-framework @wdio/spec-reporter exceljs
+          npx appium driver install uiautomator2
+
+      - name: Build Debug APK
+        working-directory: 'ortho app/apps/mobile/android'
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Enable KVM Hardware Acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run Appium Tests on Android Emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          profile: Nexus 6
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          disable-animations: true
+          script: |
+            cd "ortho app/apps/mobile"
+            export APK_PATH="./android/app/build/outputs/apk/debug/app-debug.apk"
+            chmod +x scripts/ci_run_tests.sh
+            bash scripts/ci_run_tests.sh
+
+      - name: Inject Build History Reports
+        if: always()
+        run: |
+          BUILD_DIR="ortho app/apps/mobile/reports/history/build-${{ github.run_number }}"
+          mkdir -p "$BUILD_DIR"
+          cp "ortho app/apps/mobile/reports/execution-report.html" "$BUILD_DIR/execution-report.html" || true
+          cp "ortho app/apps/mobile/reports/appium-report.xlsx" "$BUILD_DIR/appium-report.xlsx" || true
+
+      - name: Generate GHA Step Summary
+        if: always()
+        run: |
+          SUMMARY_FILE="ortho app/apps/mobile/mobile-test-summary.md"
+          if [ -f "$SUMMARY_FILE" ]; then
+            cat "$SUMMARY_FILE" >> $GITHUB_STEP_SUMMARY
+            echo "Summary appended to GHA Step Summary."
+          else
+            echo "⚠️ No summary file found." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload Test Reports as Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mobile-E2E-Reports
+          path: |
+            ortho app/apps/mobile/reports/execution-report.html
+            ortho app/apps/mobile/reports/appium-report.xlsx
+
+      - name: Deploy Reports to GitHub Pages
+        if: always()
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: 'ortho app/apps/mobile/reports'
+          target-folder: reports/mobile
+          clean: false

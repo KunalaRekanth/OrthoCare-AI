@@ -1,0 +1,32 @@
+{
+  "condition_to_idx": {
+    "Appliance adaptation: Salivation & soreness": 0,
+    "Archwire-related: Poking wire": 1,
+    "Aspiration risk: Swallowed bracket/component": 2,
+    "Bracket-related: Complete debond": 3,
+    "Caries/enamel: White spot lesions": 4,
+    "Fixed appliance: Breakage of telescopic rod": 5,
+    "Ligature-related: Lost elastic ligature": 6,
+    "Pain-related: Excessive activation pain": 7,
+    "Periodontal issues: Gingival inflammation": 8,
+    "Soft tissue injuries: Cheek ulcer": 9,
+    "TMJ discomfort: Joint locking & acute pain": 10,
+    "Trauma-related: Fixed appliance injury": 11,
+    "Twin Block: Dislodged bite block": 12
+  },
+  "idx_to_condition": {
+    "0": "Appliance adaptation: Salivation & soreness",
+    "1": "Archwire-related: Poking wire",
+    "2": "Aspiration risk: Swallowed bracket/component",
+    "3": "Bracket-related: Complete debond",
+    "4": "Caries/enamel: White spot lesions",
+    "5": "Fixed appliance: Breakage of telescopic rod",
+    "6": "Ligature-related: Lost elastic ligature",
+    "7": "Pain-related: Excessive activation pain",
+    "8": "Periodontal issues: Gingival inflammation",
+    "9": "Soft tissue injuries: Cheek ulcer",
+    "10": "TMJ discomfort: Joint locking & acute pain",
+    "11": "Trauma-related: Fixed appliance injury",
+    "12": "Twin Block: Dislodged bite block"
+  }
+}
