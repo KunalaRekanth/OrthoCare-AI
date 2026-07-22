@@ -81,6 +81,7 @@ jobs:
           mkdir -p "$BUILD_DIR"
           cp "apps/mobile/reports/execution-report.html" "$BUILD_DIR/execution-report.html" || true
           cp "apps/mobile/reports/appium-report.xlsx" "$BUILD_DIR/appium-report.xlsx" || true
+          touch "apps/mobile/reports/.nojekyll"
 
       - name: Generate GHA Step Summary
         if: always()
