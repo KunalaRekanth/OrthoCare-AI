@@ -21,15 +21,13 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-        with:
-          path: 'ortho app'
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: 'npm'
-          cache-dependency-path: 'ortho app/package-lock.json'
+          cache-dependency-path: 'package-lock.json'
 
       - name: Setup Java (for Gradle)
         uses: actions/setup-java@v4
@@ -39,23 +37,22 @@ jobs:
 
       - name: Install Root Dependencies
         run: npm ci
-        working-directory: 'ortho app'
 
       - name: Install Appium & WDIO Dependencies
-        working-directory: 'ortho app/apps/mobile'
+        working-directory: 'apps/mobile'
         run: |
           npm install -g appium
           npm install appium @wdio/cli @wdio/local-runner @wdio/mocha-framework @wdio/spec-reporter exceljs
           npx appium driver install uiautomator2 || appium driver install uiautomator2
 
       - name: Build Web App & Copy Capacitor Assets
-        working-directory: 'ortho app/apps/mobile'
+        working-directory: 'apps/mobile'
         run: |
           npm run build
           npx cap sync android
 
       - name: Build Debug APK
-        working-directory: 'ortho app/apps/mobile/android'
+        working-directory: 'apps/mobile/android'
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
@@ -75,20 +72,20 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
-          script: bash -c "cd \"ortho app/apps/mobile\" && export PATH=\"\$(pwd)/node_modules/.bin:\$PATH\" && export APK_PATH=\"./android/app/build/outputs/apk/debug/app-debug.apk\" && chmod +x scripts/ci_run_tests.sh && ./scripts/ci_run_tests.sh"
+          script: bash -c "cd \"apps/mobile\" && export PATH=\"\$(pwd)/node_modules/.bin:\$PATH\" && export APK_PATH=\"./android/app/build/outputs/apk/debug/app-debug.apk\" && chmod +x scripts/ci_run_tests.sh && ./scripts/ci_run_tests.sh"
 
       - name: Inject Build History Reports
         if: always()
         run: |
-          BUILD_DIR="ortho app/apps/mobile/reports/history/build-${{ github.run_number }}"
+          BUILD_DIR="apps/mobile/reports/history/build-${{ github.run_number }}"
           mkdir -p "$BUILD_DIR"
-          cp "ortho app/apps/mobile/reports/execution-report.html" "$BUILD_DIR/execution-report.html" || true
-          cp "ortho app/apps/mobile/reports/appium-report.xlsx" "$BUILD_DIR/appium-report.xlsx" || true
+          cp "apps/mobile/reports/execution-report.html" "$BUILD_DIR/execution-report.html" || true
+          cp "apps/mobile/reports/appium-report.xlsx" "$BUILD_DIR/appium-report.xlsx" || true
 
       - name: Generate GHA Step Summary
         if: always()
         run: |
-          SUMMARY_FILE="ortho app/apps/mobile/mobile-test-summary.md"
+          SUMMARY_FILE="apps/mobile/mobile-test-summary.md"
           if [ -f "$SUMMARY_FILE" ]; then
             cat "$SUMMARY_FILE" >> $GITHUB_STEP_SUMMARY
             echo "Summary appended to GHA Step Summary."
@@ -102,14 +99,14 @@ jobs:
         with:
           name: Mobile-E2E-Reports
           path: |
-            ortho app/apps/mobile/reports/execution-report.html
-            ortho app/apps/mobile/reports/appium-report.xlsx
+            apps/mobile/reports/execution-report.html
+            apps/mobile/reports/appium-report.xlsx
 
       - name: Deploy Reports to GitHub Pages
         if: always()
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: ortho app/apps/mobile/reports
+          folder: apps/mobile/reports
           target-folder: reports/mobile
           branch: gh-pages
 
