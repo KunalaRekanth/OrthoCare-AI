@@ -1,6 +1,7 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
+import { ArrowLeft } from 'lucide-react';
 
 // Auth Pages
 import Login from './pages/auth/Login';
@@ -68,11 +69,54 @@ const ProfileRoute = ({ children }) => {
     return children;
 }
 
+const BackButton = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Hide on root landing pages
+  const isLandingPage = location.pathname === '/' || location.pathname === '/doctor';
+
+  if (isLandingPage) return null;
+
+  return (
+    <button 
+      onClick={() => navigate(-1)}
+      className="btn btn-secondary"
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '0.5rem',
+        marginBottom: '1.5rem',
+        padding: '0.5rem 1rem',
+        fontSize: '0.9rem',
+        borderRadius: '8px',
+        border: '1px solid var(--glass-border)',
+        background: 'rgba(255, 255, 255, 0.05)',
+        cursor: 'pointer',
+        color: 'var(--text-main)',
+        transition: 'all 0.2s ease',
+      }}
+      onMouseOver={(e) => {
+        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+        e.currentTarget.style.transform = 'translateX(-3px)';
+      }}
+      onMouseOut={(e) => {
+        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+        e.currentTarget.style.transform = 'translateX(0)';
+      }}
+    >
+      <ArrowLeft size={16} />
+      Back
+    </button>
+  );
+};
+
 function App() {
   return (
     <Router basename={import.meta.env.BASE_URL}>
       <Navbar />
       <div className="container" style={{ paddingTop: '2rem' }}>
+        <BackButton />
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<PatientLanding />} />

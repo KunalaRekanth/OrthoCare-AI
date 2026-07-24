@@ -30,6 +30,11 @@ const SetPassword = () => {
       return;
     }
 
+    if (/\s/.test(password)) {
+      setError('Password cannot contain spaces.');
+      return;
+    }
+
     setLoading(true);
     try {
       let user;
